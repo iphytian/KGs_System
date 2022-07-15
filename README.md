@@ -1,4 +1,4 @@
 # KGs_System
-telescope intelligent maintenance support system
-Neo4j is used to construct the knowledge gragh query system, status updata, and node importance.  
-data: node.csv and edge.csv for LAMOST 
+1. telescope intelligent maintenance support system//
+2. Neo4j is used to construct the knowledge gragh query system, status updata, and node importance.  
+3. data: node.csv and edge.csv for LAMOST 
