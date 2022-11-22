@@ -9,6 +9,7 @@ import imagecutout as cutout
 import os
 import tensorflow as tf
 import numpy as np
+import node_status_refresh as node_sr
 
 # 读取文件夹中的图片
 # Read the pictures in the folder
@@ -174,32 +175,7 @@ for num in range(maxnumber+1):
         final_result_pre4 = tf.argmax(final_result_pre3, axis=1)
         final_result = int(final_result_pre4)
 
-    graph = Graph('http://localhost:7474',user='neo4j',password='19830722')
-
-    #定义匹配结果
-    #define the query result
-    def find_image_quality(data0):
-        image_quality = ''
-        if data0 == 0:
-            image_quality = 'no_bright_star image'
-        elif data0 == 1:
-             print('telescope is changing survey area')
-        elif data0 == 2:
-            image_quality = 'Stick_like image'
-        elif data0 == 3:
-            image_quality = 'Donut_like image'
-        elif data0 == 4:
-            image_quality = 'Two_point_like image'
-        elif data0 == 5:
-            print('telescope is normal')
-        else:
-            image_quality = 'Lumpy_like image'
-        return image_quality
-
-    #根据匹配结果进行查询
-    # query based on import
-    a = find_image_quality(final_result)
-    b = graph.run("MATCH (n{classes:'enviroment'})"
-                  "MATCH p=({name:n.name})-[*]->({name:$name}) RETURN n.name, p,length(p)",name = a)
-
-    class_result.append([cam0_path, final_result])
+# 给出匹配的节点链及特征向量
+# give the feature vector
+    node_sr.update()
+    data = node_sr.merge_feature(final_result)
