@@ -1,0 +1,84 @@
+# 使用FCNN实现最终评估器的验证
+# final estimator based on simulation data
+import random
+from matplotlib import pyplot
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout, Activation
+
+
+filename = '/home/nj2018/Desktop/lstm_data/simu_data.csv'
+data = pd.read_csv(filename)
+
+values = data.values
+# # 原始数据标准化，为了加速收敛
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled = scaler.fit_transform(values)
+random.shuffle(scaled)
+random.shuffle(scaled)
+Y = scaled[:, 4]
+X = scaled[:, 0:4]
+
+# 随机拆分训练集与测试集
+from sklearn.model_selection import train_test_split
+train_x, test_x, train_y, test_y = train_test_split(X, Y, test_size=0.25)
+
+# 全连接神经网络
+model = Sequential()  # 初始化
+input = X.shape[1]
+# 隐藏层128
+model.add(Dense(128, input_shape=(input,)))  #
+model.add(Activation('relu'))
+# Dropout层用于防止过拟合
+model.add(Dropout(0.2))
+# 隐藏层128
+model.add(Dense(128))
+model.add(Activation('relu'))
+# 没有激活函数用于输出层，因为这是一个回归问题，
+# 我们希望直接预测数值，而不需要采用激活函数进行变换
+model.add(Dense(2))
+model.add(Activation('softmax'))
+# 使用高效的ADAM优化算法以及优化的最小均方误差损失函数
+# 查看网络结构
+model.summary()
+
+model.compile(
+    loss="sparse_categorical_crossentropy",  # 损失函数
+    optimizer="adam",  # 优化函数，SGD、adam不同优化函数不同的路径向最优点推进，adam最新
+    metrics=["accuracy"]  # 达到的目标
+)
+
+from keras.callbacks import EarlyStopping
+
+early_stopping = EarlyStopping(monitor='val_loss', patience=50, verbose=1)
+# 训练
+history = model.fit(train_x, train_y, epochs=20, batch_size=200,
+                    validation_data=(test_x, test_y), verbose=1,
+                    shuffle=False, callbacks=[early_stopping])
+
+# loss曲线
+pyplot.plot(history.history['loss'], label='train')
+pyplot.plot(history.history['val_loss'], label='test')
+pyplot.title('Model loss')
+pyplot.ylabel('Loss')
+pyplot.xlabel('Epoch')
+pyplot.legend()
+pyplot.show()
+# 预测
+yhat = model.predict(test_x)
+
+num = 0
+for j in range(len(yhat)):
+    if yhat[j][0] > yhat[j][1]:
+        number = 0
+    else:
+        number = 1
+    if number == test_y[j]:
+        num = num + 1
+    else:
+        continue
+    print(j)
+
+acc = num/len(yhat)
+print(acc)
